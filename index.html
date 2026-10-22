@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#121212">
+  <title>Lector & SRS</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- Barra de estado superior -->
+  <header class="app-header">
+    <h1 class="logo">LinguaLite</h1>
+    <div class="stats-badge" id="stats-badge">
+      <span id="due-count">0</span> pendientes
+    </div>
+  </header>
+
+  <!-- Contenedor dinámico principal -->
+  <main class="app-main">
+    
+    <!-- Vista 1: Lector Contextual -->
+    <section id="view-reader" class="view active">
+      <div class="reader-toolbar">
+        <label class="btn-secondary" for="file-import">
+          <span>📁 Cargar Lectura</span>
+          <input type="file" id="file-import" accept=".json" style="display: none;">
+        </label>
+      </div>
+
+      <article class="reader-card">
+        <h2 id="reader-title" class="reader-title">Sin lectura cargada</h2>
+        <div id="reader-content" class="reader-content">
+          <p class="placeholder-text">Usa el botón superior para cargar un archivo JSON o avanza a la siguiente fase para ver el contenido precargado de prueba.</p>
+        </div>
+      </article>
+
+      <!-- Panel flotante de definición / glosa contextual (inicialmente oculto) -->
+      <aside id="gloss-panel" class="gloss-panel hidden">
+        <div class="gloss-content">
+          <div class="gloss-word-info">
+            <span id="gloss-word" class="gloss-word"></span>
+            <span id="gloss-phonetic" class="gloss-phonetic"></span>
+          </div>
+          <p id="gloss-definition" class="gloss-definition"></p>
+        </div>
+        <button id="btn-add-deck" class="btn-primary">Añadir a Repaso</button>
+      </aside>
+    </section>
+
+    <!-- Vista 2: Repaso SRS / Flashcards -->
+    <section id="view-review" class="view">
+      <div class="review-container">
+        <div class="card-counter">
+          Tarjeta <span id="card-index">0</span> de <span id="card-total">0</span>
+        </div>
+
+        <div class="flashcard" id="flashcard">
+          <div class="card-side card-front">
+            <span class="card-prompt" id="card-front-text">Presiona Iniciar</span>
+            <span class="card-hint" id="card-hint-text"></span>
+          </div>
+          <div class="card-side card-back hidden" id="card-back-side">
+            <hr class="card-divider">
+            <span class="card-answer" id="card-back-text">Traducción</span>
+          </div>
+        </div>
+
+        <div class="review-actions">
+          <button id="btn-show-answer" class="btn-primary full-width">Mostrar Respuesta</button>
+          
+          <div id="srs-rating-buttons" class="rating-grid hidden">
+            <button class="btn-rating btn-again" data-rating="again">Otra vez<br><small>1m</small></button>
+            <button class="btn-rating btn-hard" data-rating="hard">Difícil<br><small>1d</small></button>
+            <button class="btn-rating btn-good" data-rating="good">Bien<br><small>3d</small></button>
+            <button class="btn-rating btn-easy" data-rating="easy">Fácil<br><small>5d</small></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Barra de navegación fija inferior (fácil alcance con pulgares) -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-target="view-reader">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">Lectura</span>
+    </button>
+    <button class="nav-btn" data-target="view-review">
+      <span class="nav-icon">🧠</span>
+      <span class="nav-label">Repasar</span>
+    </button>
+  </nav>
+
+  <script src="app.js"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SW registrado con éxito:', reg.scope))
+        .catch(err => console.error('Error registrando SW:', err));
+    });
+  }
+</script>
+</body>
+</html>
