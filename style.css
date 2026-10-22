@@ -20,7 +20,7 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
-  user-select: none; /* Previene selecciones molestas en interacción rápida */
+  user-select: none;
 }
 
 body {
@@ -29,13 +29,20 @@ body {
   font-family: var(--font-family);
   font-size: 16px;
   line-height: 1.5;
+
+  /* Manejo exacto de pantalla en celulares */
   height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* Header */
+/* ==========================================
+   BARRA SUPERIOR (HEADER)
+   ========================================== */
 .app-header {
   height: 52px;
   background-color: var(--bg-surface);
@@ -45,6 +52,7 @@ body {
   padding: 0 16px;
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
+  z-index: 10;
 }
 
 .logo {
@@ -67,9 +75,12 @@ body {
   font-weight: bold;
 }
 
-/* Contenedor Vistas */
+/* ==========================================
+   CONTENEDOR DINÁMICO CENTRAL
+   ========================================== */
 .app-main {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   position: relative;
   -webkit-overflow-scrolling: touch;
@@ -86,11 +97,137 @@ body {
   flex-direction: column;
 }
 
-/* VISTA LECTOR */
+/* ==========================================
+   VISTA 1: BIBLIOTECA & MODAL
+   ========================================== */
+.library-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.library-header h2 {
+  font-size: 1.3rem;
+  color: #fff;
+}
+
+.library-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.library-actions .btn-secondary,
+.library-actions label {
+  flex: 1;
+  font-size: 0.85rem;
+  padding: 10px 8px;
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.library-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.library-item.current {
+  border-color: var(--accent);
+}
+
+.library-item-info {
+  flex: 1;
+  cursor: pointer;
+}
+
+.library-item-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.library-item-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn-delete-text {
+  background: transparent;
+  color: var(--color-again);
+  padding: 8px;
+  font-size: 1.1rem;
+  border-radius: 6px;
+}
+
+.btn-delete-text:active {
+  background: rgba(255, 107, 107, 0.15);
+}
+
+/* Modal de pegado */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 18px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-content h3 {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.modal-content textarea {
+  background: var(--bg-primary);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+  user-select: text;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ==========================================
+   VISTA 2: LECTOR CONTEXTUAL
+   ========================================== */
 .reader-toolbar {
   margin-bottom: 12px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .reader-card {
@@ -108,7 +245,7 @@ body {
 }
 
 .reader-content {
-  user-select: text; /* Permite selección estándar en el texto si se desea */
+  user-select: text;
   font-size: 1.15rem;
   line-height: 1.8;
   letter-spacing: 0.2px;
@@ -120,7 +257,26 @@ body {
   font-size: 0.95rem;
 }
 
-/* Panel flotante de glosa/traducción */
+/* Tokens de lectura */
+.token {
+  display: inline-block;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 1px;
+}
+
+.token:active {
+  background-color: rgba(var(--accent-rgb), 0.25);
+  color: var(--accent);
+}
+
+.token.selected {
+  background-color: var(--accent);
+  color: #000;
+  font-weight: 500;
+}
+
+/* Panel flotante de glosa */
 .gloss-panel {
   position: sticky;
   bottom: 8px;
@@ -158,7 +314,9 @@ body {
   color: var(--text-main);
 }
 
-/* VISTA REPASO */
+/* ==========================================
+   VISTA 3: REPASO SRS
+   ========================================== */
 .review-container {
   display: flex;
   flex-direction: column;
@@ -223,7 +381,9 @@ body {
   gap: 8px;
 }
 
-/* Botones y Controles */
+/* ==========================================
+   BOTONES Y CONTROLES COMUNES
+   ========================================== */
 button, .btn-secondary {
   font-family: inherit;
   border: none;
@@ -255,6 +415,14 @@ button:active, .btn-secondary:active {
   border: 1px solid var(--border-subtle);
 }
 
+.btn-disabled {
+  background: var(--bg-surface-elevated) !important;
+  color: var(--text-muted) !important;
+  border: 1px solid var(--border-subtle) !important;
+  cursor: default !important;
+  opacity: 0.8;
+}
+
 .full-width {
   width: 100%;
 }
@@ -271,7 +439,9 @@ button:active, .btn-secondary:active {
   opacity: 0.85;
 }
 
-/* Barra inferior de navegación */
+/* ==========================================
+   BARRA INFERIOR DE NAVEGACIÓN
+   ========================================== */
 .bottom-nav {
   height: calc(56px + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
@@ -279,6 +449,8 @@ button:active, .btn-secondary:active {
   border-top: 1px solid var(--border-subtle);
   display: flex;
   flex-shrink: 0;
+  width: 100%;
+  z-index: 50;
 }
 
 .nav-btn {
@@ -307,34 +479,9 @@ button:active, .btn-secondary:active {
   color: var(--accent);
 }
 
-/* Utilidades */
+/* ==========================================
+   UTILIDADES
+   ========================================== */
 .hidden {
   display: none !important;
-}
-/* Tokens del Lector */
-.token {
-  display: inline-block;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 0 1px;
-}
-
-.token:active {
-  background-color: rgba(var(--accent-rgb), 0.25);
-  color: var(--accent);
-}
-/* Resaltado del token activo */
-.token.selected {
-  background-color: var(--accent);
-  color: #000;
-  font-weight: 500;
-}
-
-/* Botón deshabilitado cuando ya existe en el mazo */
-.btn-disabled {
-  background: var(--bg-surface-elevated) !important;
-  color: var(--text-muted) !important;
-  border: 1px solid var(--border-subtle) !important;
-  cursor: default !important;
-  opacity: 0.8;
 }

@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#121212">
-  <title>Lector & SRS</title>
-  <link rel="stylesheet" href="style.css">
+  <title>LinguaLite SRS</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Barra de estado superior -->
+  <!-- Barra superior -->
   <header class="app-header">
     <h1 class="logo">LinguaLite</h1>
     <div class="stats-badge" id="stats-badge">
@@ -20,24 +20,52 @@
 
   <!-- Contenedor dinámico principal -->
   <main class="app-main">
+
+    <!-- Vista 1: Biblioteca (Gestor de lecturas) -->
+    <section id="view-library" class="view active">
+      <div class="library-header">
+        <h2>Mis Lecturas</h2>
+        <div class="library-actions">
+          <label class="btn-secondary" for="file-import">
+            <span>📁 Importar Archivo</span>
+            <input type="file" id="file-import" accept=".json" style="display: none;">
+          </label>
+          <button id="btn-open-paste-modal" class="btn-secondary">📋 Pegar JSON</button>
+        </div>
+      </div>
+
+      <!-- Lista de textos guardados -->
+      <div id="library-list" class="library-list">
+        <!-- Renderizado dinámicamente con JS -->
+      </div>
+
+      <!-- Cuadro modal ligero para pegar JSON directamente -->
+      <div id="paste-modal" class="modal hidden">
+        <div class="modal-content">
+          <h3>Pegar texto en formato JSON</h3>
+          <textarea id="paste-json-input" placeholder='Pega aquí el JSON generado por la IA...' rows="8"></textarea>
+          <div class="modal-buttons">
+            <button id="btn-cancel-paste" class="btn-secondary">Cancelar</button>
+            <button id="btn-confirm-paste" class="btn-primary">Guardar Lectura</button>
+          </div>
+        </div>
+      </div>
+    </section>
     
-    <!-- Vista 1: Lector Contextual -->
-    <section id="view-reader" class="view active">
+    <!-- Vista 2: Lector Contextual -->
+    <section id="view-reader" class="view">
       <div class="reader-toolbar">
-        <label class="btn-secondary" for="file-import">
-          <span>📁 Cargar Lectura</span>
-          <input type="file" id="file-import" accept=".json" style="display: none;">
-        </label>
+        <button id="btn-back-to-library" class="btn-secondary">← Volver a Biblioteca</button>
       </div>
 
       <article class="reader-card">
-        <h2 id="reader-title" class="reader-title">Sin lectura cargada</h2>
+        <h2 id="reader-title" class="reader-title">Sin lectura seleccionada</h2>
         <div id="reader-content" class="reader-content">
-          <p class="placeholder-text">Usa el botón superior para cargar un archivo JSON o avanza a la siguiente fase para ver el contenido precargado de prueba.</p>
+          <p class="placeholder-text">Selecciona una lectura en la biblioteca para comenzar.</p>
         </div>
       </article>
 
-      <!-- Panel flotante de definición / glosa contextual (inicialmente oculto) -->
+      <!-- Panel flotante de glosa -->
       <aside id="gloss-panel" class="gloss-panel hidden">
         <div class="gloss-content">
           <div class="gloss-word-info">
@@ -50,7 +78,7 @@
       </aside>
     </section>
 
-    <!-- Vista 2: Repaso SRS / Flashcards -->
+    <!-- Vista 3: Repaso SRS / Flashcards -->
     <section id="view-review" class="view">
       <div class="review-container">
         <div class="card-counter">
@@ -83,9 +111,13 @@
 
   </main>
 
-  <!-- Barra de navegación fija inferior (fácil alcance con pulgares) -->
+  <!-- Barra inferior de navegación (3 pestañas optimizadas para pulgar) -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-target="view-reader">
+    <button class="nav-btn active" data-target="view-library">
+      <span class="nav-icon">📚</span>
+      <span class="nav-label">Biblioteca</span>
+    </button>
+    <button class="nav-btn" data-target="view-reader">
       <span class="nav-icon">📖</span>
       <span class="nav-label">Lectura</span>
     </button>
@@ -97,13 +129,13 @@
 
   <script src="app.js"></script>
   <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('SW registrado con éxito:', reg.scope))
-        .catch(err => console.error('Error registrando SW:', err));
-    });
-  }
-</script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW activo:', reg.scope))
+          .catch(err => console.error('Error SW:', err));
+      });
+    }
+  </script>
 </body>
 </html>
