@@ -17,12 +17,21 @@ const STORAGE_KEYS = {
 };
 
 // ==========================================
-// MOTOR DE AUDIO NATIVO (Web Speech API)
+// MOTOR DE AUDIO NATIVO Y MULTILINGÜE
 // ==========================================
 const AudioModule = {
   defaultLang: 'en-US',
 
-  speak(text, lang = this.defaultLang) {
+  // Autodetecta según caracteres si no viene especificado en el JSON
+  detectLanguage(text) {
+    if (!text) return this.defaultLang;
+    if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN'; // Chino Hanzi
+    if (/[\u3040-\u30ff]/.test(text)) return 'ja-JP'; // Japonés
+    if (/[\u0400-\u04ff]/.test(text)) return 'ru-RU'; // Ruso
+    return this.defaultLang;
+  },
+
+  speak(text, explicitLang = null) {
     if (!('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel();
@@ -30,10 +39,19 @@ const AudioModule = {
     const cleanText = text.replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '').trim();
     if (!cleanText) return;
 
+    const targetLang = explicitLang || this.detectLanguage(cleanText);
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = lang;
-    utterance.rate = 0.9;
+    utterance.lang = targetLang;
+    utterance.rate = 0.85; // Velocidad pausada para estudio auditivo
     utterance.pitch = 1.0;
+
+    // Asignar voz instalada adecuada si está disponible en el dispositivo
+    const voices = window.speechSynthesis.getVoices();
+    const voiceMatch = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(targetLang.slice(0, 2).toLowerCase()));
+    if (voiceMatch) {
+      utterance.voice = voiceMatch;
+    }
 
     window.speechSynthesis.speak(utterance);
   }
@@ -193,14 +211,14 @@ const LibraryModule = {
 
   addText(data) {
     if (!data.tokens || !Array.isArray(data.tokens) || data.tokens.length === 0) {
-      alert('Estructura inválida: debe incluir "tokens".');
+      alert('Estructura inválida: debe incluir el arreglo "tokens".');
       return;
     }
 
     const newText = {
       id: data.id || 'text_' + Date.now(),
       title: data.title || 'Lectura sin título',
-      lang: data.lang || 'en-US', // Si el JSON trae "lang": "zh-CN", lo usa
+      lang: data.lang || AudioModule.detectLanguage(data.tokens[0]?.w),
       tokens: data.tokens,
       wordCount: data.tokens.length,
       createdAt: new Date().toLocaleDateString()
@@ -244,7 +262,7 @@ const LibraryModule = {
     listEl.innerHTML = '';
 
     if (AppState.library.length === 0) {
-      listEl.innerHTML = '<p class="placeholder-text">Aún no hay lecturas guardadas.</p>';
+      listEl.innerHTML = '<p class="placeholder-text">Aún no hay lecturas guardadas. Pega un JSON o importa un archivo.</p>';
       return;
     }
 
@@ -256,7 +274,7 @@ const LibraryModule = {
       card.innerHTML = `
         <div class="library-item-info" data-id="${text.id}">
           <div class="library-item-title">${text.title}</div>
-          <div class="library-item-meta">${text.wordCount} palabras • ${text.createdAt || 'Guardado'}</div>
+          <div class="library-item-meta">${text.wordCount} palabras • ${text.lang || 'auto'} • ${text.createdAt || 'Guardado'}</div>
         </div>
         <button class="btn-delete-text" data-id="${text.id}" title="Eliminar">🗑️</button>
       `;
@@ -279,21 +297,26 @@ const ReaderModule = {
     const defEl = document.getElementById('gloss-definition');
     const btnAddDeck = document.getElementById('btn-add-deck');
 
-    // Botón para repetir audio en el panel de glosa
-    const btnSpeakGloss = document.createElement('button');
-    btnSpeakGloss.className = 'btn-audio';
-    btnSpeakGloss.innerHTML = '🔊';
-    btnSpeakGloss.title = 'Escuchar';
-    wordEl.parentElement.appendChild(btnSpeakGloss);
+    // Botón de altavoz en el panel de glosa (evita duplicados si se reinicia)
+    let btnSpeakGloss = document.getElementById('btn-gloss-audio');
+    if (!btnSpeakGloss) {
+      btnSpeakGloss = document.createElement('button');
+      btnSpeakGloss.id = 'btn-gloss-audio';
+      btnSpeakGloss.className = 'btn-audio';
+      btnSpeakGloss.innerHTML = '🔊';
+      btnSpeakGloss.title = 'Escuchar';
+      wordEl.parentElement.appendChild(btnSpeakGloss);
 
-    btnSpeakGloss.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (AppState.selectedToken) {
-        const activeText = AppState.library.find(t => t.id === AppState.currentTextId);
-        AudioModule.speak(AppState.selectedToken.w, activeText?.lang || AudioModule.defaultLang);
-      }
-    });
+      btnSpeakGloss.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (AppState.selectedToken) {
+          const activeText = AppState.library.find(t => t.id === AppState.currentTextId);
+          AudioModule.speak(AppState.selectedToken.w, activeText?.lang);
+        }
+      });
+    }
 
+    // Toque interactivo en palabra/token
     contentEl.addEventListener('click', (e) => {
       const tokenSpan = e.target.closest('.token');
       const activeText = AppState.library.find(t => t.id === AppState.currentTextId);
@@ -314,8 +337,8 @@ const ReaderModule = {
       phoneticEl.textContent = tokenData.p || '';
       defEl.textContent = tokenData.t || 'Sin traducción';
 
-      // Disparar pronunciación automática al tocar
-      AudioModule.speak(tokenData.w, activeText.lang || AudioModule.defaultLang);
+      // Reproducción de voz nativa al tocar
+      AudioModule.speak(tokenData.w, activeText.lang);
 
       const isAlreadySaved = AppState.deck.some(c => c.front.toLowerCase() === (cleanFront || tokenData.w).toLowerCase());
       if (isAlreadySaved) {
@@ -342,7 +365,7 @@ const ReaderModule = {
         front: cleanFront,
         back: AppState.selectedToken.t,
         hint: AppState.selectedToken.p || '',
-        lang: activeText?.lang || AudioModule.defaultLang,
+        lang: activeText?.lang || AudioModule.detectLanguage(cleanFront),
         interval: 0,
         repetitions: 0,
         easeFactor: 2.5,
@@ -391,7 +414,7 @@ const ReaderModule = {
 };
 
 // ==========================================
-// MÓDULO: REPASO SRS
+// MÓDULO: REPASO SRS (FLASHCARDS)
 // ==========================================
 const ReviewModule = {
   init() {
@@ -399,20 +422,24 @@ const ReviewModule = {
     const ratingButtons = document.getElementById('srs-rating-buttons');
     const frontSide = document.querySelector('.card-front');
 
-    // Botón para repetir pronunciación de la tarjeta
-    const btnSpeakCard = document.createElement('button');
-    btnSpeakCard.className = 'btn-audio-card';
-    btnSpeakCard.innerHTML = '🔊';
-    btnSpeakCard.title = 'Escuchar';
-    frontSide.appendChild(btnSpeakCard);
+    // Botón de altavoz en la tarjeta
+    let btnSpeakCard = document.getElementById('btn-card-audio');
+    if (!btnSpeakCard) {
+      btnSpeakCard = document.createElement('button');
+      btnSpeakCard.id = 'btn-card-audio';
+      btnSpeakCard.className = 'btn-audio-card';
+      btnSpeakCard.innerHTML = '🔊';
+      btnSpeakCard.title = 'Escuchar';
+      frontSide.appendChild(btnSpeakCard);
 
-    btnSpeakCard.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const currentCard = AppState.reviewQueue[AppState.currentCardIndex];
-      if (currentCard) {
-        AudioModule.speak(currentCard.front, currentCard.lang || AudioModule.defaultLang);
-      }
-    });
+      btnSpeakCard.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const currentCard = AppState.reviewQueue[AppState.currentCardIndex];
+        if (currentCard) {
+          AudioModule.speak(currentCard.front, currentCard.lang);
+        }
+      });
+    }
 
     btnShowAnswer.addEventListener('click', () => {
       document.getElementById('card-back-side').classList.remove('hidden');
@@ -443,7 +470,7 @@ const ReviewModule = {
     const backSide = document.getElementById('card-back-side');
     const btnShowAnswer = document.getElementById('btn-show-answer');
     const ratingButtons = document.getElementById('srs-rating-buttons');
-    const btnSpeakCard = document.querySelector('.btn-audio-card');
+    const btnSpeakCard = document.getElementById('btn-card-audio');
 
     backSide.classList.add('hidden');
     ratingButtons.classList.add('hidden');
@@ -465,11 +492,12 @@ const ReviewModule = {
     frontText.textContent = currentCard.front;
     hintText.textContent = currentCard.hint || '';
     backText.textContent = currentCard.back;
+
     btnShowAnswer.classList.remove('hidden');
     if (btnSpeakCard) btnSpeakCard.classList.remove('hidden');
 
-    // Reproducción automática de la palabra al presentarse la tarjeta
-    AudioModule.speak(currentCard.front, currentCard.lang || AudioModule.defaultLang);
+    // Reproducción por voz nativa automática al mostrar la tarjeta
+    AudioModule.speak(currentCard.front, currentCard.lang);
   },
 
   rateCurrentCard(ratingKey) {
@@ -535,6 +563,13 @@ const UI = {
 // PUNTO DE ENTRADA (BOOTSTRAP)
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Asegurar carga limpia de voces en navegadores móviles basados en Chromium
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  }
+
   Storage.loadData();
   UI.initTabs();
   LibraryModule.init();
