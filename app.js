@@ -26,7 +26,6 @@ const AudioModule = {
   init() {
     if (!('speechSynthesis' in window)) return;
 
-    // Cargar voces disponibles
     const loadVoices = () => {
       this.voices = window.speechSynthesis.getVoices();
     };
@@ -56,15 +55,14 @@ const AudioModule = {
     let targetLang = (explicitLang || this.detectLanguage(cleanText)).replace('_', '-');
     const langPrefix = targetLang.split('-')[0].toLowerCase();
 
-    // Refrescar lista si estaba vacía
     if (this.voices.length === 0) {
       this.voices = window.speechSynthesis.getVoices();
     }
 
-    // 1. Buscar coincidencia exacta (ej: zh-CN o pt-BR)
+    // 1. Coincidencia exacta (ej: zh-CN, it-IT, pt-BR)
     let bestVoice = this.voices.find(v => v.lang.replace('_', '-').toLowerCase() === targetLang.toLowerCase());
 
-    // 2. Si no hay exacta, buscar coincidencia por familia (ej: cualquier voz de 'zh', 'it', 'pt', 'fr')
+    // 2. Coincidencia por prefijo familiar (ej: cualquier voz de 'zh', 'it', 'fr', 'pt', 'eu')
     if (!bestVoice) {
       bestVoice = this.voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(langPrefix));
     }
@@ -322,7 +320,6 @@ const ReaderModule = {
     const defEl = document.getElementById('gloss-definition');
     const btnAddDeck = document.getElementById('btn-add-deck');
 
-    // Botón de altavoz en el panel de glosa (evita duplicados si se reinicia)
     let btnSpeakGloss = document.getElementById('btn-gloss-audio');
     if (!btnSpeakGloss) {
       btnSpeakGloss = document.createElement('button');
@@ -341,7 +338,6 @@ const ReaderModule = {
       });
     }
 
-    // Toque interactivo en palabra/token
     contentEl.addEventListener('click', (e) => {
       const tokenSpan = e.target.closest('.token');
       const activeText = AppState.library.find(t => t.id === AppState.currentTextId);
@@ -362,7 +358,7 @@ const ReaderModule = {
       phoneticEl.textContent = tokenData.p || '';
       defEl.textContent = tokenData.t || 'Sin traducción';
 
-      // Reproducción de voz nativa al tocar
+      // Dispara la pronunciación con el idioma explícito del texto o detectado
       AudioModule.speak(tokenData.w, activeText.lang);
 
       const isAlreadySaved = AppState.deck.some(c => c.front.toLowerCase() === (cleanFront || tokenData.w).toLowerCase());
@@ -447,7 +443,6 @@ const ReviewModule = {
     const ratingButtons = document.getElementById('srs-rating-buttons');
     const frontSide = document.querySelector('.card-front');
 
-    // Botón de altavoz en la tarjeta
     let btnSpeakCard = document.getElementById('btn-card-audio');
     if (!btnSpeakCard) {
       btnSpeakCard = document.createElement('button');
@@ -521,7 +516,7 @@ const ReviewModule = {
     btnShowAnswer.classList.remove('hidden');
     if (btnSpeakCard) btnSpeakCard.classList.remove('hidden');
 
-    // Reproducción por voz nativa automática al mostrar la tarjeta
+    // Reproducción al cargar la tarjeta
     AudioModule.speak(currentCard.front, currentCard.lang);
   },
 
@@ -588,25 +583,8 @@ const UI = {
 // PUNTO DE ENTRADA (BOOTSTRAP)
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Asegurar carga limpia de voces en navegadores móviles basados en Chromium
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = () => {
-      window.speechSynthesis.getVoices();
-    document.addEventListener('DOMContentLoaded', () => {
   Storage.loadData();
-  AudioModule.init(); // <-- Inicializa la carga de voces
-  UI.initTabs();
-  LibraryModule.init();
-  ReaderModule.init();
-  ReviewModule.init();
-
-  LibraryModule.render();
-  ReaderModule.loadCurrentText();
-  UI.updateStats();
-});
-  }
-
-  Storage.loadData();
+  AudioModule.init();
   UI.initTabs();
   LibraryModule.init();
   ReaderModule.init();
