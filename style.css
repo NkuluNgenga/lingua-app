@@ -485,3 +485,22 @@ button:active, .btn-secondary:active {
 .hidden {
   display: none !important;
 }
+/* Botones de audio */
+.btn-audio, .btn-audio-card {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.btn-audio-card {
+  font-size: 1.4rem;
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+.btn-audio-card:active, .btn-audio:active {
+  transform: scale(0.9);
+}
