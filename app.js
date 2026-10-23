@@ -17,17 +17,31 @@ const STORAGE_KEYS = {
 };
 
 // ==========================================
-// MOTOR DE AUDIO NATIVO Y MULTILINGÜE
+// MOTOR DE AUDIO NATIVO Y MULTILINGÜE REFORZADO
 // ==========================================
 const AudioModule = {
   defaultLang: 'en-US',
+  voices: [],
 
-  // Autodetecta según caracteres si no viene especificado en el JSON
+  init() {
+    if (!('speechSynthesis' in window)) return;
+
+    // Cargar voces disponibles
+    const loadVoices = () => {
+      this.voices = window.speechSynthesis.getVoices();
+    };
+
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  },
+
   detectLanguage(text) {
     if (!text) return this.defaultLang;
-    if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN'; // Chino Hanzi
-    if (/[\u3040-\u30ff]/.test(text)) return 'ja-JP'; // Japonés
-    if (/[\u0400-\u04ff]/.test(text)) return 'ru-RU'; // Ruso
+    if (/[\u4e00-\u9fa5]/.test(text)) return 'zh-CN';
+    if (/[\u3040-\u30ff]/.test(text)) return 'ja-JP';
+    if (/[\u0400-\u04ff]/.test(text)) return 'ru-RU';
     return this.defaultLang;
   },
 
@@ -39,19 +53,30 @@ const AudioModule = {
     const cleanText = text.replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, '').trim();
     if (!cleanText) return;
 
-    const targetLang = explicitLang || this.detectLanguage(cleanText);
+    let targetLang = (explicitLang || this.detectLanguage(cleanText)).replace('_', '-');
+    const langPrefix = targetLang.split('-')[0].toLowerCase();
+
+    // Refrescar lista si estaba vacía
+    if (this.voices.length === 0) {
+      this.voices = window.speechSynthesis.getVoices();
+    }
+
+    // 1. Buscar coincidencia exacta (ej: zh-CN o pt-BR)
+    let bestVoice = this.voices.find(v => v.lang.replace('_', '-').toLowerCase() === targetLang.toLowerCase());
+
+    // 2. Si no hay exacta, buscar coincidencia por familia (ej: cualquier voz de 'zh', 'it', 'pt', 'fr')
+    if (!bestVoice) {
+      bestVoice = this.voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(langPrefix));
+    }
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = targetLang;
-    utterance.rate = 0.85; // Velocidad pausada para estudio auditivo
-    utterance.pitch = 1.0;
-
-    // Asignar voz instalada adecuada si está disponible en el dispositivo
-    const voices = window.speechSynthesis.getVoices();
-    const voiceMatch = voices.find(v => v.lang.replace('_', '-').toLowerCase().startsWith(targetLang.slice(0, 2).toLowerCase()));
-    if (voiceMatch) {
-      utterance.voice = voiceMatch;
+    utterance.lang = bestVoice ? bestVoice.lang : targetLang;
+    if (bestVoice) {
+      utterance.voice = bestVoice;
     }
+
+    utterance.rate = 0.85;
+    utterance.pitch = 1.0;
 
     window.speechSynthesis.speak(utterance);
   }
