@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lingualite-v6'; // Cambiado a v2
+const CACHE_NAME = 'lingualite-v7'; // Cambiado a v2
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
