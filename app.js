@@ -592,7 +592,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.getVoices();
-    };
+    document.addEventListener('DOMContentLoaded', () => {
+  Storage.loadData();
+  AudioModule.init(); // <-- Inicializa la carga de voces
+  UI.initTabs();
+  LibraryModule.init();
+  ReaderModule.init();
+  ReviewModule.init();
+
+  LibraryModule.render();
+  ReaderModule.loadCurrentText();
+  UI.updateStats();
+});
   }
 
   Storage.loadData();
